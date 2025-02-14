@@ -32,4 +32,4 @@ pip3 install psutil PyYAML
 # {cpu_usage}: 系统的 CPU 使用率，以百分比形式呈现
 # {memory_usage}: 系统的内存使用率，以百分比形式呈现
 # {current_time}: 当前的系统时间，格式为 HH:MM
-card_format: "脑容量占用 {cpu_usage}%，内存占用 {memory_usage}%，当前时间 {current_time}"
+card_format: "cpu占用 {cpu_usage}%，内存占用 {memory_usage}%，时间 {current_time}"
