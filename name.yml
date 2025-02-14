@@ -1,0 +1,5 @@
+# 这是群名片的格式模板，你可以根据需求自由组合以下参数：
+# {cpu_usage}: 系统的 CPU 使用率，以百分比形式呈现
+# {memory_usage}: 系统的内存使用率，以百分比形式呈现
+# {current_time}: 当前的系统时间，格式为 YYYY-MM-DD HH:MM:SS  仅保留了小时和分钟 也就是 HH:MM,如有需要自行修改py代码
+card_format: "cpu占用 {cpu_usage}%，内存占用{memory_usage}%， {current_time}"
