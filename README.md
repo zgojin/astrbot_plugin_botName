@@ -18,11 +18,12 @@
 
 ```bash
 pip install psutil PyYAML
-
+```
 也可能是
+
 ```bash
 pip3 install psutil PyYAML
-
+```
 ### 配置
 你需要修改`name.yml` 文件
 这个文件的作用是定义群名片的显示格式。你可以根据自己的需求，自由地组合 `{cpu_usage}`、`{memory_usage}` 和 `{current_time}` 这三个参数，并且还能添加自定义的文本内容。以下是一个示例：
