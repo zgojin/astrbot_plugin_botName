@@ -1,8 +1,7 @@
 import os
-import psutil
-import yaml
 import logging
 import datetime
+import subprocess
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api.all import *
@@ -20,6 +19,23 @@ SYSTEM_INFO_FILE = os.path.join(PLUGIN_DIR, 'system_info.yml')
 # 名片模板文件路径
 NAME_TEMPLATE_FILE = os.path.join(PLUGIN_DIR, 'name.yml')
 
+# 检查是否安装了 psutil 和 pyyaml 依赖
+def install_requirements():
+    requirements_path = os.path.join(PLUGIN_DIR, 'requirements.txt')
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements_path])
+    except subprocess.CalledProcessError as e:
+        logger.error(f"安装依赖项时出错: {e}")
+
+try:
+    import psutil
+    import yaml
+except ImportError:
+    logger.error("缺少依赖项，正在尝试安装...")
+    install_requirements()
+    import psutil
+    import yaml
+
 class SystemInfoRecorder:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -35,8 +51,8 @@ class SystemInfoRecorder:
             "current_time": current_time
         }
         try:
-            with open(self.file_path, 'w') as file:
-                yaml.dump(system_info, file)
+            with open(self.file_path, 'w', encoding='utf-8') as file:
+                yaml.dump(system_info, file, allow_unicode=True)
             logger.info("系统信息已成功保存到 YAML 文件。")
         except Exception as e:
             logger.error(f"保存系统信息到 YAML 文件时出错: {e}")
@@ -68,14 +84,14 @@ class DynamicGroupCardPlugin(Star):
                     self.info_recorder.record_system_info()
 
                     try:
-                        with open(SYSTEM_INFO_FILE, 'r') as file:
+                        with open(SYSTEM_INFO_FILE, 'r', encoding='utf-8') as file:
                             system_info = yaml.safe_load(file)
                         cpu_usage = system_info.get("cpu_usage", "未知")
                         memory_usage = system_info.get("memory_usage", "未知")
                         current_time = system_info.get("current_time", "未知")
                         # 从 YAML 模板读取名片格式
                         try:
-                            with open(NAME_TEMPLATE_FILE, 'r') as template_file:
+                            with open(NAME_TEMPLATE_FILE, 'r', encoding='utf-8') as template_file:
                                 template = yaml.safe_load(template_file)
                                 card_format = template.get('card_format', "脑容量占用 {cpu_usage}%，内存占用 {memory_usage}%，当前时间 {current_time}")
                         except FileNotFoundError:
