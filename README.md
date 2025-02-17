@@ -24,6 +24,9 @@ pip install psutil PyYAML
 ```bash
 pip3 install psutil PyYAML
 ```
+
+# 更新
+- 1.1 尝试使用自动安装依赖，以及固定编码存读
 ### 配置
 你需要修改`name.yml` 文件
 这个文件的作用是定义群名片的显示格式。你可以根据自己的需求，自由地组合 `{cpu_usage}`、`{memory_usage}` 和 `{current_time}` 这三个参数，并且还能添加自定义的文本内容。以下是一个示例：
@@ -32,4 +35,7 @@ pip3 install psutil PyYAML
 ### {cpu_usage}: 系统的 CPU 使用率，以百分比形式呈现
 ### {memory_usage}: 系统的内存使用率，以百分比形式呈现
 ### {current_time}: 当前的系统时间，格式为 HH:MM
-``` card_format: "cpu占用 {cpu_usage}%，内存占用 {memory_usage}%，时间 {current_time}" ```
+```bash
+ card_format: "cpu占用 {cpu_usage}%，内存占用 {memory_usage}%，时间 {current_time}" 
+```
+
