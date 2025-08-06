@@ -55,7 +55,7 @@ class SystemInfoRecorder:
         except Exception as e:
             logger.error(f"保存系统信息到 YAML 文件时出错: {e}")
 
-@register("astrbot_plugin_botName", "长安某", "bot动态群名片插件", "2.0.0", "https://github.com/zgojin/astrbot_plugin_botName")
+@register("astrbot_plugin_botname", "长安某", "bot动态群名片插件", "2.0.0", "https://github.com/zgojin/astrbot_plugin_botname")
 class DynamicGroupCardPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
