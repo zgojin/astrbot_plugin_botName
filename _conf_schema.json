@@ -15,7 +15,7 @@
     "type": "string",
     "description": "CPU部分的后缀",
     "hint": "显示在CPU数值之后的内容。例如：%",
-    "default": "%"
+    "default": ""
   },
   "memory_prefix": {
     "type": "string",
@@ -27,7 +27,7 @@
     "type": "string",
     "description": "内存部分的后缀",
     "hint": "显示在内存数值之后的内容。例如：%",
-    "default": "%"
+    "default": ""
   },
   "time_prefix": {
     "type": "string",
@@ -45,6 +45,6 @@
     "type": "string",
     "description": "各个指标之间的分隔符",
     "hint": "例如：' | ' 或 '  ,  '",
-    "default": ","
+    "default": ""
   }
 }
