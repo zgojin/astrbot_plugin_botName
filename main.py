@@ -3,6 +3,7 @@ import psutil
 import yaml
 import logging
 import datetime
+from astrbot.api import AstrBotConfig
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api.all import *
@@ -10,15 +11,13 @@ from astrbot.api.all import *
 logger = logging.getLogger(__name__)
 
 # 插件目录
-PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_botName')
+PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_botname')
 # 确保插件目录存在
 if not os.path.exists(PLUGIN_DIR):
     os.makedirs(PLUGIN_DIR)
 
 # 系统信息文件路径
 SYSTEM_INFO_FILE = os.path.join(PLUGIN_DIR, 'system_info.yml')
-# 名片模板文件路径
-NAME_TEMPLATE_FILE = os.path.join(PLUGIN_DIR, 'name.yml')
 
 def read_yaml_file(file_path):
     encodings = ['utf-8', 'gbk', 'iso-8859-1']
@@ -43,7 +42,6 @@ class SystemInfoRecorder:
     def record_system_info(self):
         cpu_percent = psutil.cpu_percent(interval=1)
         memory_percent = psutil.virtual_memory().percent
-        # 只保留小时和分钟
         current_time = datetime.datetime.now().strftime("%H:%M")
         system_info = {
             "cpu_usage": cpu_percent,
@@ -57,12 +55,12 @@ class SystemInfoRecorder:
         except Exception as e:
             logger.error(f"保存系统信息到 YAML 文件时出错: {e}")
 
-@register("dynamic_group_card", "Your Name", "动态群名片插件", "1.0.0", "repo url")
+@register("astrbot_plugin_botName", "长安某", "bot动态群名片插件", "2.0.0", "https://github.com/zgojin/astrbot_plugin_botName")
 class DynamicGroupCardPlugin(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
         self.info_recorder = SystemInfoRecorder(SYSTEM_INFO_FILE)
-        # 用于存储每个群聊的最后修改时间
         self.group_last_modify_time = {}
 
     @filter.on_decorating_result()
@@ -75,31 +73,61 @@ class DynamicGroupCardPlugin(Star):
 
             if group_id:
                 now = datetime.datetime.now()
-                # 获取该群聊的最后修改时间，如果不存在则为 None
                 last_modify_time = self.group_last_modify_time.get(group_id)
 
-                # 检查距离上一次修改是否已经过了一分钟
                 if last_modify_time is None or (now - last_modify_time).total_seconds() >= 60:
-                    # 每次发消息时记录系统信息
                     self.info_recorder.record_system_info()
 
                     system_info = read_yaml_file(SYSTEM_INFO_FILE)
                     if system_info is None:
-                        cpu_usage = "未知"
-                        memory_usage = "未知"
-                        current_time = "未知"
+                        cpu_usage, memory_usage, current_time = "未知", "未知", "未知"
                     else:
                         cpu_usage = system_info.get("cpu_usage", "未知")
                         memory_usage = system_info.get("memory_usage", "未知")
                         current_time = system_info.get("current_time", "未知")
 
-                    template = read_yaml_file(NAME_TEMPLATE_FILE)
-                    if template is None:
-                        card_format = "脑容量占用 {cpu_usage}%，内存占用 {memory_usage}%，当前时间 {current_time}"
-                    else:
-                        card_format = template.get('card_format', "脑容量占用 {cpu_usage}%，内存占用 {memory_usage}%，当前时间 {current_time}")
+                    # *** 核心改动：使用前缀和后缀动态构建群名片 ***
+                    
+                    metric_parts = []
+                    
+                    # CPU 部分
+                    cpu_prefix = self.config.get('cpu_prefix', '')
+                    cpu_suffix = self.config.get('cpu_suffix', '')
+                    if cpu_prefix or cpu_suffix: # 只要前缀或后缀有一个不为空，就显示
+                        metric_parts.append(f"{cpu_prefix}{cpu_usage}{cpu_suffix}")
+                        
+                    # 内存部分
+                    mem_prefix = self.config.get('memory_prefix', '')
+                    mem_suffix = self.config.get('memory_suffix', '')
+                    if mem_prefix or mem_suffix:
+                        metric_parts.append(f"{mem_prefix}{memory_usage}{mem_suffix}")
 
-                    new_card = card_format.format(cpu_usage=cpu_usage, memory_usage=memory_usage, current_time=current_time)
+                    # 时间部分
+                    time_prefix = self.config.get('time_prefix', '')
+                    time_suffix = self.config.get('time_suffix', '')
+                    if time_prefix or time_suffix:
+                        metric_parts.append(f"{time_prefix}{current_time}{time_suffix}")
+
+                    # 用分隔符拼接所有指标
+                    separator = self.config.get('separator', ' | ')
+                    metrics_string = separator.join(metric_parts)
+
+                    # 添加机器人名字
+                    bot_name = self.config.get('bot_name', '')
+                    
+                    # 组合最终的群名片
+                    final_card_parts = []
+                    if bot_name:
+                        final_card_parts.append(bot_name)
+                    if metrics_string:
+                        final_card_parts.append(metrics_string)
+                    
+                    new_card = " ".join(final_card_parts).strip()
+                    
+                    # 如果最终生成的名片为空（所有配置都为空），则不执行修改
+                    if not new_card:
+                        logger.info(f"群 {group_id} 的群名片所有配置项均为空，跳过修改。")
+                        return
 
                     payload = {
                         "group_id": group_id,
@@ -112,7 +140,6 @@ class DynamicGroupCardPlugin(Star):
                         try:
                             result = await client.api.call_action('set_group_card', **payload)
                             logger.info(f"成功尝试修改群 {group_id} 中Bot的群名片为 {new_card}，API返回: {result}")
-                            # 更新该群聊的最后修改时间
                             self.group_last_modify_time[group_id] = now
                             break
                         except Exception as e:
